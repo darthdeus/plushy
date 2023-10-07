@@ -378,6 +378,8 @@ mod tests {
         assert_eq!(5, store[&id]);
     }
 
+    // TODO: https://docs.rs/owning_ref/latest/owning_ref/
+    //
     // This fails to compile since `RefMut::map` wants `&iter()`
     // #[test]
     // fn test_sadcell() {
