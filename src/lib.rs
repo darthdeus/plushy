@@ -6,10 +6,10 @@ use std::{
 
 use thunderdome::{Arena, Index};
 
-// #[cfg(feature = "globals")]
+#[cfg(feature = "globals")]
 mod globals;
 
-// #[cfg(feature = "globals")]
+#[cfg(feature = "globals")]
 pub use crate::globals::*;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
