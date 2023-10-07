@@ -3,20 +3,21 @@ use std::{
     collections::HashMap,
 };
 
-use paste::paste;
 use thunderdome::Arena;
+pub use paste;
 
 pub trait Component: 'static + Sized {
     type Id: Copy;
 }
 
+#[macro_export]
 macro_rules! component {
     ($ty:ident) => {
-        $crate::paste! {
+        $crate::paste::paste! {
             #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-            pub struct  [<$ty Id>] (thunderdome::Index);
+            pub struct [<$ty:upper Id>] (thunderdome::Index);
 
-            impl From<thunderdome::Index> for [<$ty Id>] {
+            impl From<thunderdome::Index> for [<$ty:upper Id>] {
                 fn from(index: thunderdome::Index) -> Self {
                     Self(index)
                 }
@@ -24,7 +25,7 @@ macro_rules! component {
         }
 
         impl $crate::Component for $ty {
-            type Id = $crate::paste! { [<$ty Id>] };
+            type Id = $crate::paste::paste! { [<$ty:upper Id>] };
         }
     };
 }
@@ -93,13 +94,16 @@ impl Store {
 mod tests {
     use crate::Store;
 
-    // #[test]
-    // fn empty_store_is_okay() {
-    //     let store = Store::new();
-    //
-    //     assert_eq!(None, store.iter::<i32>().next());
-    //     assert_eq!(None, store.iter::<f32>().next());
-    // }
+    #[test]
+    fn empty_store_is_okay() {
+        let store = Store::new();
+
+        component!(i32);
+        component!(f32);
+
+        assert_eq!(None, store.iter::<i32>().next());
+        assert_eq!(None, store.iter::<f32>().next());
+    }
 
     #[test]
     fn simple_test() {
