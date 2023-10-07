@@ -199,6 +199,20 @@ impl Store {
     }
 }
 
+impl<T: 'static> std::ops::Index<Id<T>> for Store {
+    type Output = T;
+
+    fn index(&self, index: Id<T>) -> &Self::Output {
+        self.get(index).unwrap()
+    }
+}
+
+impl<T: 'static> std::ops::IndexMut<Id<T>> for Store {
+    fn index_mut(&mut self, index: Id<T>) -> &mut T {
+        self.get_mut(index).unwrap()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::Store;
@@ -248,5 +262,26 @@ mod tests {
 
         // Fetch it again and verify the change.
         assert_eq!(200.0, store.get(player).unwrap().health);
+    }
+
+    #[test]
+    fn index_test() {
+        let mut store = Store::new();
+
+        let id = store.spawn(3);
+
+        assert_eq!(3, store[id]);
+        assert_eq!(&3, store.get(id).unwrap());
+    }
+
+    #[test]
+    fn index_mut_test() {
+        let mut store = Store::new();
+
+        let id = store.spawn(3);
+
+        assert_eq!(3, store[id]);
+        store[id] = 4;
+        assert_eq!(4, store[id]);
     }
 }
