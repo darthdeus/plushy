@@ -197,6 +197,49 @@ impl Store {
             None
         }
     }
+
+    /// Returns a mut reference to two values corresponding to the given ids.
+    /// If the two ids are equal this function panics.
+    ///
+    /// ```
+    /// use plushy::*;
+    ///
+    /// let mut store = Store::new();
+    ///
+    /// let id1 = store.spawn(3);
+    /// let id2 = store.spawn(2);
+    /// let id3 = store.spawn(1);
+    ///
+    /// let (a, b) = store.get2_mut(id1, id2);
+    ///
+    /// let a = a.unwrap();
+    /// let b = b.unwrap();
+    ///
+    /// assert_eq!(&3, a);
+    /// assert_eq!(&2, b);
+    ///
+    /// *a = 4;
+    /// *b = 5;
+    ///
+    /// assert_eq!(Some(&4), store.get(id1));
+    /// assert_eq!(Some(&5), store.get(id2));
+    /// ```
+    pub fn get2_mut<T: 'static>(
+        &mut self,
+        id1: Id<T>,
+        id2: Id<T>,
+    ) -> (Option<&mut T>, Option<&mut T>) {
+        let type_id = TypeId::of::<T>();
+
+        if let Some(arena) = self.data.get_mut(&type_id) {
+            arena
+                .downcast_mut::<Arena<T>>()
+                .unwrap()
+                .get2_mut(id1.0, id2.0)
+        } else {
+            (None, None)
+        }
+    }
 }
 
 impl<T: 'static> std::ops::Index<Id<T>> for Store {
@@ -283,5 +326,15 @@ mod tests {
         assert_eq!(3, store[id]);
         store[id] = 4;
         assert_eq!(4, store[id]);
+    }
+
+    #[test]
+    #[should_panic(expected = "is called with two identical indices")]
+    fn get2_mut_panics_test() {
+        let mut store = Store::new();
+
+        let id = store.spawn(3);
+
+        store.get2_mut(id, id);
     }
 }
