@@ -28,18 +28,19 @@ impl Store {
         }
     }
 
-    pub fn iter<T: 'static>(&self) -> impl Iterator<Item = &T> {
+    pub fn iter<T: 'static>(&self) -> Box<dyn Iterator<Item = &T> + '_> {
         let type_id = TypeId::of::<T>();
 
         if let Some(arena) = self.data.get(&type_id) {
-            arena
-                .downcast_ref::<Arena<T>>()
-                .unwrap()
-                .iter()
-                .map(|x| x.1)
+            Box::new(
+                arena
+                    .downcast_ref::<Arena<T>>()
+                    .unwrap()
+                    .iter()
+                    .map(|x| x.1),
+            )
         } else {
-            // std::iter::empty()
-            unreachable!()
+            Box::new(std::iter::empty())
         }
     }
 }
