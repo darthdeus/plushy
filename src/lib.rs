@@ -174,6 +174,30 @@ impl Store {
             Box::new(std::iter::empty())
         }
     }
+
+    /// Removes the value corresponding to the given id and returns it.
+    /// ```
+    /// use plushy::*;
+    ///
+    /// let mut store = Store::new();
+    ///
+    /// let id1 = store.spawn(3);
+    /// let id2 = store.spawn(2);
+    ///
+    /// assert_eq!(2, store.iter::<i32>().count());
+    /// assert_eq!(Some(3), store.remove(id1));
+    /// assert_eq!(None, store.get(id1));
+    /// assert_eq!(1, store.iter::<i32>().count());
+    /// ```
+    pub fn remove<T: 'static>(&mut self, id: Id<T>) -> Option<T> {
+        let type_id = TypeId::of::<T>();
+
+        if let Some(arena) = self.data.get_mut(&type_id) {
+            arena.downcast_mut::<Arena<T>>().unwrap().remove(id.0)
+        } else {
+            None
+        }
+    }
 }
 
 #[cfg(test)]
