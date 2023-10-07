@@ -1,14 +1,14 @@
 use crate::*;
 
-use once_cell::sync::Lazy;
-
-use atomic_refcell::{AtomicRef, AtomicRefCell};
-
-pub static STORE: Lazy<AtomicRefCell<Store>> = Lazy::new(|| AtomicRefCell::new(Store::new()));
-
-pub fn iter<T>() -> AtomicRef<'static, &'static Box<dyn Iterator<Item = (Id<T>, &'static T)>>> {
-    AtomicRef::map(STORE.borrow(), |store| &store.iter::<T>())
-}
+// use once_cell::sync::Lazy;
+//
+// use atomic_refcell::{AtomicRef, AtomicRefCell};
+//
+// pub static STORE: Lazy<AtomicRefCell<Store>> = Lazy::new(|| AtomicRefCell::new(Store::new()));
+//
+// pub fn iter<T>() -> AtomicRef<'static, &'static Box<dyn Iterator<Item = (Id<T>, &'static T)>>> {
+//     AtomicRef::map(STORE.borrow(), |store| &store.iter::<T>())
+// }
 
 // use parking_lot::Mutex;
 //
