@@ -15,6 +15,23 @@ Plushy is a relatively simple crate that builds on top of thunderdome, but adds 
 - Strongly typed wrappers around `Index`, meaning you can't accidentally mix up your entity ids. If you insert a `Player`, the corresponding id is `Id<Player>`.
 - You only need one `Store` for all of your types. With `thunderdome` you'd need to create a separate `Arena<T>` for every type `T` you want to store.
 
+```rust
+let mut store = Store::new();
+
+#[derive(Debug, PartialEq)]
+struct Thing {
+    pub x: i32,
+}
+
+store.spawn(Thing { x: 1 });
+store.spawn(Thing { x: 2 });
+
+let mut it = store.iter::<Thing>();
+assert_eq!(1, it.next().unwrap().1.x);
+assert_eq!(2, it.next().unwrap().1.x);
+assert_eq!(None, it.next());
+```
+
 # License
 
 Plushy is free and open source and dual licensed under MIT and Apache 2.0 licenses.
