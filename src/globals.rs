@@ -12,13 +12,7 @@ pub static STORE: Lazy<AtomicRefCell<Store>> = Lazy::new(|| AtomicRefCell::new(S
 //     AtomicRef::map(STORE.borrow(), |store| &store.iter::<T>())
 // }
 
-
-
-
-
-
-
-
+// ****************************************
 
 // Alternative sadness, no less sad
 
