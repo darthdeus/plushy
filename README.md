@@ -18,7 +18,7 @@ Plushy is a relatively simple crate that builds on top of thunderdome, but adds 
 ```rust
 let mut store = Store::new();
 
-struct Thing {
+struct Enemy {
     pub x: i32,
 }
 
@@ -26,17 +26,31 @@ struct Player {
     pub health: f32,
 }
 
-store.spawn(Thing { x: 1 });
-store.spawn(Thing { x: 2 });
+store.spawn(Enemy { x: 1 });
+store.spawn(Enemy { x: 2 });
 
-store.spawn(Player { health: 100.0 });
+// Store the player's ID for later
+let player = store.spawn(Player { health: 100.0 });
 
-let mut it = store.iter::<Thing>();
-assert_eq!(1, it.next().unwrap().1.x);
-assert_eq!(2, it.next().unwrap().1.x);
+assert_eq!(
+    &[1, 2],
+    store
+        .iter::<Enemy>()
+        .map(|t| t.1.x)
+        .collect::<Vec<_>>()
+        .as_slice()
+);
 
-assert_eq!(100.0, store.iter::<Player>().next().unwrap().1.health);
+// Fetch the player based on the ID. Note we don't need to write
+// `store.get::<Player>(player)`, the type is inferred from the
+// strongly typed ID.
+assert_eq!(100.0, store.get(player.clone()).unwrap().health);
 
+// Change player health
+store.get_mut(player).unwrap().health = 200.0;
+
+// Fetch it again and verify the change.
+assert_eq!(200.0, store.get(player).unwrap().health);
 ```
 
 # License
