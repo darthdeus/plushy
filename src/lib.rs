@@ -3,51 +3,44 @@ use std::{
     collections::HashMap,
 };
 
-use thunderdome::Arena;
 use paste::paste;
+use thunderdome::Arena;
 
 pub trait Component: 'static + Sized {
     type Id: Copy;
 }
 
-// macro_rules! component {
-//     ($ty:ident) => {
-//         #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-//         paste! {
-//             pub struct [< $ty Id >](thunderdome::Index);
-//         }
-//
-//
-//         impl Component for $ty {
-//             type Id = paste! [< $ty Id >];
-//         }
-//     };
-// }
-
 macro_rules! component {
     ($ty:ident) => {
-        paste! {
+        $crate::paste! {
             #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
             pub struct  [<$ty Id>] (thunderdome::Index);
+
+            impl From<thunderdome::Index> for [<$ty Id>] {
+                fn from(index: thunderdome::Index) -> Self {
+                    Self(index)
+                }
+            }
         }
 
-        impl Component for $ty {
-            type Id = paste! { [<$ty Id>] };
+        impl $crate::Component for $ty {
+            type Id = $crate::paste! { [<$ty Id>] };
         }
     };
 }
 
-// macro_rules! component {
-//     ($ty:ident, $id:ident) => {
-//         #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-//         pub struct $id(thunderdome::Index);
-//
-//
-//         impl Component for $ty {
-//             type Id = $id;
-//         }
-//     };
-// }
+pub trait FromIndex: Sized {
+    fn from_index(idx: thunderdome::Index) -> Self;
+}
+
+impl<T> FromIndex for T
+where
+    T: From<thunderdome::Index>,
+{
+    fn from_index(idx: thunderdome::Index) -> Self {
+        Self::from(idx)
+    }
+}
 
 pub struct Store {
     pub data: HashMap<TypeId, Box<dyn Any>>,
@@ -60,16 +53,23 @@ impl Store {
         }
     }
 
-    pub fn spawn<T: Component>(&mut self, value: T) {
+    pub fn spawn<K, T>(&mut self, value: T) -> K
+    where
+        T: Component<Id = K>,
+        K: FromIndex + Copy,
+    {
         let type_id = TypeId::of::<T>();
 
-        if let Some(arena) = self.data.get_mut(&type_id) {
-            arena.downcast_mut::<Arena<T>>().unwrap().insert(value);
+        let idx = if let Some(arena) = self.data.get_mut(&type_id) {
+            arena.downcast_mut::<Arena<T>>().unwrap().insert(value)
         } else {
             let mut arena = Arena::new();
-            arena.insert(value);
+            let idx = arena.insert(value);
             self.data.insert(type_id, Box::new(arena));
-        }
+            idx
+        };
+
+        K::from_index(idx)
     }
 
     pub fn iter<T: Component>(&self) -> Box<dyn Iterator<Item = &T> + '_> {
@@ -89,22 +89,9 @@ impl Store {
     }
 }
 
-#[derive(Debug, PartialEq)]
-struct Thing {
-    pub x: i32,
-}
-
-component!(Thing);
-// impl Component for Thing {
-//     type Id = ThingId;
-// }
-//
-// #[derive(Copy, Clone)]
-// struct ThingId(thunderdome::Index);
-
 #[cfg(test)]
 mod tests {
-    use crate::{Component, Store, Thing};
+    use crate::Store;
 
     // #[test]
     // fn empty_store_is_okay() {
@@ -117,6 +104,13 @@ mod tests {
     #[test]
     fn simple_test() {
         let mut store = Store::new();
+
+        #[derive(Debug, PartialEq)]
+        struct Thing {
+            pub x: i32,
+        }
+
+        component!(Thing);
 
         store.spawn(Thing { x: 1 });
         store.spawn(Thing { x: 2 });
