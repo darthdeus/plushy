@@ -17,6 +17,7 @@ impl<T> Clone for Id<T> {
     }
 }
 
+#[derive(Default)]
 pub struct Store {
     pub data: HashMap<TypeId, Box<dyn Any>>,
 }
@@ -24,9 +25,7 @@ pub struct Store {
 impl Store {
     /// Creates a new plushy store.
     pub fn new() -> Self {
-        Self {
-            data: HashMap::new(),
-        }
+        Self::default()
     }
 
     /// Spawns a new value in the store and returns an id to it.
@@ -54,7 +53,7 @@ impl Store {
             idx
         };
 
-        Id(idx, PhantomData::default())
+        Id(idx, PhantomData)
     }
 
     /// Returns a reference to the value corresponding to the given id.
@@ -129,7 +128,7 @@ impl Store {
                     .downcast_ref::<Arena<T>>()
                     .unwrap()
                     .iter()
-                    .map(|x| (Id(x.0, PhantomData::default()), x.1)),
+                    .map(|x| (Id(x.0, PhantomData), x.1)),
             )
         } else {
             Box::new(std::iter::empty())
@@ -168,7 +167,7 @@ impl Store {
                     .downcast_mut::<Arena<T>>()
                     .unwrap()
                     .iter_mut()
-                    .map(|x| (Id(x.0, PhantomData::default()), x.1)),
+                    .map(|x| (Id(x.0, PhantomData), x.1)),
             )
         } else {
             Box::new(std::iter::empty())
