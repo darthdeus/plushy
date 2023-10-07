@@ -11,3 +11,4 @@ repository = "https://github.com/darthdeus/comfy"
 
 [dependencies]
 thunderdome = "0.6.1"
+paste = "1.0.14"
