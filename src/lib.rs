@@ -7,7 +7,7 @@ pub use paste;
 use thunderdome::Arena;
 
 pub trait Component: 'static + Sized {
-    type Id: Copy;
+    type Id: Copy + FromIndex + 'static;
 }
 
 #[macro_export]
@@ -55,7 +55,7 @@ impl Store {
         }
     }
 
-    pub fn spawn<T, K>(&mut self, value: T) -> K
+    pub fn spawn<T, K>(&mut self, value: T) -> T::Id
     where
         T: Component<Id = K>,
         K: FromIndex + Copy,
@@ -71,13 +71,13 @@ impl Store {
             idx
         };
 
-        K::from_index(idx)
+        T::Id::from_index(idx)
     }
 
-    pub fn iter<'a, T, K>(&'a self) -> Box<dyn Iterator<Item = (K, &T)> + '_>
+    pub fn iter<T, K>(&self) -> Box<dyn Iterator<Item = (T::Id, &T)> + '_>
     where
         T: Component<Id = K>,
-        K: FromIndex + Copy + 'a,
+        K: FromIndex + Copy + 'static,
     {
         let type_id = TypeId::of::<T>();
 
