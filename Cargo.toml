@@ -1,0 +1,14 @@
+[package]
+name = "plushy"
+version = "0.0.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Comfiest generational arenas for Rust."
+authors = ["Jakub Arnold <darthdeus@gmail.com>"]
+homepage = "https://docs.rs/plushy"
+repository = "https://github.com/darthdeus/comfy"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
