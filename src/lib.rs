@@ -256,6 +256,20 @@ impl<T: 'static> std::ops::IndexMut<Id<T>> for Store {
     }
 }
 
+impl<T: 'static> std::ops::Index<&Id<T>> for Store {
+    type Output = T;
+
+    fn index(&self, index: &Id<T>) -> &Self::Output {
+        self.get(*index).unwrap()
+    }
+}
+
+impl<T: 'static> std::ops::IndexMut<&Id<T>> for Store {
+    fn index_mut(&mut self, index: &Id<T>) -> &mut T {
+        self.get_mut(*index).unwrap()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::Store;
@@ -336,5 +350,25 @@ mod tests {
         let id = store.spawn(3);
 
         store.get2_mut(id, id);
+    }
+
+    #[test]
+    fn index_with_ref_test() {
+        let mut store = Store::new();
+
+        let id = store.spawn(3);
+
+        assert_eq!(store[id], store[&id]);
+    }
+
+    #[test]
+    fn index_with_ref_mut_test() {
+        let mut store = Store::new();
+
+        let id = store.spawn(3);
+
+        assert_eq!(3, store[&id]);
+        store[id] += 2;
+        assert_eq!(5, store[&id]);
     }
 }
