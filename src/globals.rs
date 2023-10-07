@@ -1,14 +1,26 @@
-// use crate::*;
-//
-// use once_cell::sync::Lazy;
-//
-// use atomic_refcell::{AtomicRef, AtomicRefCell};
-//
-// pub static STORE: Lazy<AtomicRefCell<Store>> = Lazy::new(|| AtomicRefCell::new(Store::new()));
-//
+use crate::*;
+
+use once_cell::sync::Lazy;
+
+#[allow(unused_imports)]
+use atomic_refcell::{AtomicRef, AtomicRefCell};
+
+pub static STORE: Lazy<AtomicRefCell<Store>> = Lazy::new(|| AtomicRefCell::new(Store::new()));
+
+// Here lies sadness
 // pub fn iter<T>() -> AtomicRef<'static, &'static Box<dyn Iterator<Item = (Id<T>, &'static T)>>> {
 //     AtomicRef::map(STORE.borrow(), |store| &store.iter::<T>())
 // }
+
+
+
+
+
+
+
+
+
+// Alternative sadness, no less sad
 
 // use parking_lot::Mutex;
 //
