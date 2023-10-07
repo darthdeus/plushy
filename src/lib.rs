@@ -106,8 +106,8 @@ mod tests {
         component!(i32);
         component!(f32);
 
-        assert_eq!(None, store.iter::<i32, i32Id>().next());
-        assert_eq!(None, store.iter::<f32, f32Id>().next());
+        assert_eq!(None, store.iter::<i32, _>().next());
+        assert_eq!(None, store.iter::<f32, _>().next());
     }
 
     #[test]
