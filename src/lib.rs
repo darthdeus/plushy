@@ -4,7 +4,6 @@ use std::{
     marker::PhantomData,
 };
 
-pub use paste;
 use thunderdome::{Arena, Index};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
