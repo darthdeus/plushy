@@ -6,6 +6,12 @@ use std::{
 
 use thunderdome::{Arena, Index};
 
+// #[cfg(feature = "globals")]
+mod globals;
+
+// #[cfg(feature = "globals")]
+pub use crate::globals::*;
+
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Id<T>(Index, std::marker::PhantomData<T>);
 
@@ -19,7 +25,7 @@ impl<T> Clone for Id<T> {
 
 #[derive(Default)]
 pub struct Store {
-    pub data: HashMap<TypeId, Box<dyn Any>>,
+    pub data: HashMap<TypeId, Box<dyn Any + Send + Sync + 'static>>,
 }
 
 impl Store {
@@ -41,7 +47,7 @@ impl Store {
     ///
     /// assert_eq!(Some(&3), store.get(id));
     /// ```
-    pub fn spawn<T: 'static>(&mut self, value: T) -> Id<T> {
+    pub fn spawn<T: Send + Sync + 'static>(&mut self, value: T) -> Id<T> {
         let type_id = TypeId::of::<T>();
 
         let idx = if let Some(arena) = self.data.get_mut(&type_id) {

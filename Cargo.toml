@@ -8,6 +8,12 @@ authors = ["Jakub Arnold <darthdeus@gmail.com>"]
 homepage = "https://docs.rs/plushy"
 repository = "https://github.com/darthdeus/comfy"
 
+[features]
+defualt = ["globals"]
+globals = ["dep:atomic_refcell", "dep:once_cell", "dep:parking_lot"]
 
 [dependencies]
 thunderdome = "0.6.1"
+atomic_refcell = { version = "0.1.12", optional = true }
+once_cell = { version = "1.8.0", optional = true }
+parking_lot = { version = "0.12.1", optional = true }
