@@ -377,4 +377,19 @@ mod tests {
         store[id] += 2;
         assert_eq!(5, store[&id]);
     }
+
+    // This fails to compile since `RefMut::map` wants `&iter()`
+    // #[test]
+    // fn test_sadcell() {
+    //     use std::cell::{RefCell, RefMut};
+    //     struct Foo {
+    //         pub items: Vec<i32>,
+    //     }
+    //
+    //     let foo = RefCell::new(Foo { items: Vec::new() });
+    //
+    //     let mut it = RefMut::map(foo.borrow_mut(), |foo| foo.items.iter());
+    //
+    //     assert!(it.next().is_none());
+    // }
 }
