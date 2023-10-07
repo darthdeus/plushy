@@ -26,6 +26,8 @@ struct Player {
     pub health: f32,
 }
 
+// New entities can just be spawned, we don't need to register
+// the types anywhere.
 store.spawn(Enemy { x: 1 });
 store.spawn(Enemy { x: 2 });
 
