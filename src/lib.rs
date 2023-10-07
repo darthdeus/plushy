@@ -3,8 +3,8 @@ use std::{
     collections::HashMap,
 };
 
-use thunderdome::Arena;
 pub use paste;
+use thunderdome::Arena;
 
 pub trait Component: 'static + Sized {
     type Id: Copy;
@@ -14,10 +14,11 @@ pub trait Component: 'static + Sized {
 macro_rules! component {
     ($ty:ident) => {
         $crate::paste::paste! {
+            #[allow(non_camel_case_types)]
             #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-            pub struct [<$ty:upper Id>] (thunderdome::Index);
+            pub struct [<$ty Id>] (thunderdome::Index);
 
-            impl From<thunderdome::Index> for [<$ty:upper Id>] {
+            impl From<thunderdome::Index> for [<$ty Id>] {
                 fn from(index: thunderdome::Index) -> Self {
                     Self(index)
                 }
@@ -25,7 +26,7 @@ macro_rules! component {
         }
 
         impl $crate::Component for $ty {
-            type Id = $crate::paste::paste! { [<$ty:upper Id>] };
+            type Id = $crate::paste::paste! { [<$ty Id>] };
         }
     };
 }
@@ -54,7 +55,7 @@ impl Store {
         }
     }
 
-    pub fn spawn<K, T>(&mut self, value: T) -> K
+    pub fn spawn<T, K>(&mut self, value: T) -> K
     where
         T: Component<Id = K>,
         K: FromIndex + Copy,
@@ -73,7 +74,11 @@ impl Store {
         K::from_index(idx)
     }
 
-    pub fn iter<T: Component>(&self) -> Box<dyn Iterator<Item = &T> + '_> {
+    pub fn iter<'a, T, K>(&'a self) -> Box<dyn Iterator<Item = (K, &T)> + '_>
+    where
+        T: Component<Id = K>,
+        K: FromIndex + Copy + 'a,
+    {
         let type_id = TypeId::of::<T>();
 
         if let Some(arena) = self.data.get(&type_id) {
@@ -82,7 +87,7 @@ impl Store {
                     .downcast_ref::<Arena<T>>()
                     .unwrap()
                     .iter()
-                    .map(|x| x.1),
+                    .map(|x| (T::Id::from_index(x.0), x.1)),
             )
         } else {
             Box::new(std::iter::empty())
@@ -101,8 +106,8 @@ mod tests {
         component!(i32);
         component!(f32);
 
-        assert_eq!(None, store.iter::<i32>().next());
-        assert_eq!(None, store.iter::<f32>().next());
+        assert_eq!(None, store.iter::<i32, i32Id>().next());
+        assert_eq!(None, store.iter::<f32, f32Id>().next());
     }
 
     #[test]
@@ -119,9 +124,9 @@ mod tests {
         store.spawn(Thing { x: 1 });
         store.spawn(Thing { x: 2 });
 
-        let mut it = store.iter::<Thing>();
-        assert_eq!(1, it.next().unwrap().x);
-        assert_eq!(2, it.next().unwrap().x);
+        let mut it = store.iter::<Thing, _>();
+        assert_eq!(1, it.next().unwrap().1.x);
+        assert_eq!(2, it.next().unwrap().1.x);
         assert_eq!(None, it.next());
     }
 }
