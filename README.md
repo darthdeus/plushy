@@ -18,21 +18,27 @@ Plushy is a relatively simple crate that builds on top of thunderdome, but adds 
 ```rust
 let mut store = Store::new();
 
-#[derive(Debug, PartialEq)]
 struct Thing {
     pub x: i32,
+}
+
+struct Player {
+    pub health: f32,
 }
 
 store.spawn(Thing { x: 1 });
 store.spawn(Thing { x: 2 });
 
+store.spawn(Player { health: 100.0 });
+
 let mut it = store.iter::<Thing>();
 assert_eq!(1, it.next().unwrap().1.x);
 assert_eq!(2, it.next().unwrap().1.x);
-assert_eq!(None, it.next());
+
+assert_eq!(100.0, store.iter::<Player>().next().unwrap().1.health);
+
 ```
 
 # License
 
 Plushy is free and open source and dual licensed under MIT and Apache 2.0 licenses.
-
