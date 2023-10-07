@@ -14,12 +14,26 @@ pub struct Store {
 }
 
 impl Store {
+    /// Creates a new plushy store.
     pub fn new() -> Self {
         Self {
             data: HashMap::new(),
         }
     }
 
+    /// Spawns a new value in the store and returns an id to it.
+    ///
+    /// Types don't need to be registered beforehand or implement any traits.
+    /// The ids are strongly typed, for example id for `i32` is `Id<i32>`.
+    ///
+    /// ```
+    /// use plushy::*;
+    /// let mut store = Store::new();
+    ///
+    /// let id = store.spawn(3);
+    ///
+    /// assert_eq!(Some(&3), store.get(id));
+    /// ```
     pub fn spawn<T: 'static>(&mut self, value: T) -> Id<T> {
         let type_id = TypeId::of::<T>();
 
@@ -35,6 +49,69 @@ impl Store {
         Id(idx, PhantomData::default())
     }
 
+    /// Returns a reference to the value corresponding to the given id.
+    /// ```
+    /// use plushy::*;
+    ///
+    /// let mut store = Store::new();
+    ///
+    /// let id1 = store.spawn(3);
+    /// let id2 = store.spawn(2);
+    ///
+    /// assert_eq!(Some(&3), store.get(id1));
+    /// assert_eq!(Some(&2), store.get(id2));
+    /// ```
+    pub fn get<T: 'static>(&self, id: Id<T>) -> Option<&T> {
+        let type_id = TypeId::of::<T>();
+
+        if let Some(arena) = self.data.get(&type_id) {
+            arena.downcast_ref::<Arena<T>>().unwrap().get(id.0)
+        } else {
+            None
+        }
+    }
+
+    /// Returns a mutable reference to the value corresponding to the given id.
+    ///
+    /// ```
+    /// use plushy::*;
+    ///
+    /// let mut store = Store::new();
+    ///
+    /// let id1 = store.spawn(3);
+    /// let id2 = store.spawn(2);
+    ///
+    /// assert_eq!(Some(&mut 3), store.get_mut(id1));
+    /// assert_eq!(Some(&mut 2), store.get_mut(id2));
+    ///
+    /// *store.get_mut(id1).unwrap() = 4;
+    /// *store.get_mut(id2).unwrap() = 5;
+    ///
+    /// assert_eq!(Some(&4), store.get(id1));
+    /// assert_eq!(Some(&5), store.get(id2));
+    /// ```
+    pub fn get_mut<T: 'static>(&mut self, id: Id<T>) -> Option<&mut T> {
+        let type_id = TypeId::of::<T>();
+
+        if let Some(arena) = self.data.get_mut(&type_id) {
+            arena.downcast_mut::<Arena<T>>().unwrap().get_mut(id.0)
+        } else {
+            None
+        }
+    }
+
+    /// Returns an iterator over all values of the given type.
+    /// ```
+    /// use plushy::*;
+    /// let mut store = Store::new();
+    /// store.spawn(3);
+    /// store.spawn(2);
+    ///
+    /// let mut it = store.iter::<i32>();
+    ///
+    /// assert_eq!(&3, it.next().unwrap().1);
+    /// assert_eq!(&2, it.next().unwrap().1);
+    /// ```
     pub fn iter<T: 'static>(&self) -> Box<dyn Iterator<Item = (Id<T>, &T)> + '_> {
         let type_id = TypeId::of::<T>();
 
@@ -44,6 +121,45 @@ impl Store {
                     .downcast_ref::<Arena<T>>()
                     .unwrap()
                     .iter()
+                    .map(|x| (Id(x.0, PhantomData::default()), x.1)),
+            )
+        } else {
+            Box::new(std::iter::empty())
+        }
+    }
+
+    /// Returns a mutable iterator over all values of the given type.
+    /// ```
+    /// use plushy::*;
+    /// let mut store = Store::new();   
+    /// store.spawn(3);
+    /// store.spawn(2);
+    ///
+    /// let mut it = store.iter::<i32>();
+    /// assert_eq!(&mut 3, it.next().unwrap().1);
+    /// assert_eq!(&mut 2, it.next().unwrap().1);
+    ///
+    /// drop(it);
+    ///
+    /// let mut it = store.iter_mut::<i32>();
+    /// *it.next().unwrap().1 = 4;
+    /// *it.next().unwrap().1 = 5;
+    ///
+    /// drop(it);
+    ///
+    /// let mut it = store.iter::<i32>();
+    /// assert_eq!(&mut 4, it.next().unwrap().1);
+    /// assert_eq!(&mut 5, it.next().unwrap().1);
+    /// ```
+    pub fn iter_mut<T: 'static>(&mut self) -> Box<dyn Iterator<Item = (Id<T>, &mut T)> + '_> {
+        let type_id = TypeId::of::<T>();
+
+        if let Some(arena) = self.data.get_mut(&type_id) {
+            Box::new(
+                arena
+                    .downcast_mut::<Arena<T>>()
+                    .unwrap()
+                    .iter_mut()
                     .map(|x| (Id(x.0, PhantomData::default()), x.1)),
             )
         } else {
