@@ -312,13 +312,13 @@ mod tests {
         // Fetch the player based on the ID. Note we don't need to write
         // `store.get::<Player>(player)`, the type is inferred from the
         // strongly typed ID.
-        assert_eq!(100.0, store.get(player.clone()).unwrap().health);
+        assert_eq!(100.0, store.get(player).unwrap().health);
 
         // Change player health
         store.get_mut(player).unwrap().health = 200.0;
 
         // Fetch it again and verify the change.
-        assert_eq!(200.0, store.get(player).unwrap().health);
+        assert_eq!(200.0, store[player].health);
     }
 
     #[test]
