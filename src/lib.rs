@@ -1,48 +1,14 @@
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
+    marker::PhantomData,
 };
 
 pub use paste;
-use thunderdome::Arena;
+use thunderdome::{Arena, Index};
 
-pub trait Component: 'static + Sized {
-    type Id: Copy + FromIndex + 'static;
-}
-
-#[macro_export]
-macro_rules! component {
-    ($ty:ident) => {
-        $crate::paste::paste! {
-            #[allow(non_camel_case_types)]
-            #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-            pub struct [<$ty Id>] (thunderdome::Index);
-
-            impl From<thunderdome::Index> for [<$ty Id>] {
-                fn from(index: thunderdome::Index) -> Self {
-                    Self(index)
-                }
-            }
-        }
-
-        impl $crate::Component for $ty {
-            type Id = $crate::paste::paste! { [<$ty Id>] };
-        }
-    };
-}
-
-pub trait FromIndex: Sized {
-    fn from_index(idx: thunderdome::Index) -> Self;
-}
-
-impl<T> FromIndex for T
-where
-    T: From<thunderdome::Index>,
-{
-    fn from_index(idx: thunderdome::Index) -> Self {
-        Self::from(idx)
-    }
-}
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Id<T>(Index, std::marker::PhantomData<T>);
 
 pub struct Store {
     pub data: HashMap<TypeId, Box<dyn Any>>,
@@ -55,11 +21,7 @@ impl Store {
         }
     }
 
-    pub fn spawn<T, K>(&mut self, value: T) -> T::Id
-    where
-        T: Component<Id = K>,
-        K: FromIndex + Copy,
-    {
+    pub fn spawn<T: 'static>(&mut self, value: T) -> Id<T> {
         let type_id = TypeId::of::<T>();
 
         let idx = if let Some(arena) = self.data.get_mut(&type_id) {
@@ -71,14 +33,10 @@ impl Store {
             idx
         };
 
-        T::Id::from_index(idx)
+        Id(idx, PhantomData::default())
     }
 
-    pub fn iter<T, K>(&self) -> Box<dyn Iterator<Item = (T::Id, &T)> + '_>
-    where
-        T: Component<Id = K>,
-        K: FromIndex + Copy + 'static,
-    {
+    pub fn iter<T: 'static>(&self) -> Box<dyn Iterator<Item = (Id<T>, &T)> + '_> {
         let type_id = TypeId::of::<T>();
 
         if let Some(arena) = self.data.get(&type_id) {
@@ -87,7 +45,7 @@ impl Store {
                     .downcast_ref::<Arena<T>>()
                     .unwrap()
                     .iter()
-                    .map(|x| (T::Id::from_index(x.0), x.1)),
+                    .map(|x| (Id(x.0, PhantomData::default()), x.1)),
             )
         } else {
             Box::new(std::iter::empty())
@@ -103,11 +61,8 @@ mod tests {
     fn empty_store_is_okay() {
         let store = Store::new();
 
-        component!(i32);
-        component!(f32);
-
-        assert_eq!(None, store.iter::<i32, _>().next());
-        assert_eq!(None, store.iter::<f32, _>().next());
+        assert_eq!(None, store.iter::<i32>().next());
+        assert_eq!(None, store.iter::<f32>().next());
     }
 
     #[test]
@@ -119,12 +74,10 @@ mod tests {
             pub x: i32,
         }
 
-        component!(Thing);
-
         store.spawn(Thing { x: 1 });
         store.spawn(Thing { x: 2 });
 
-        let mut it = store.iter::<Thing, _>();
+        let mut it = store.iter::<Thing>();
         assert_eq!(1, it.next().unwrap().1.x);
         assert_eq!(2, it.next().unwrap().1.x);
         assert_eq!(None, it.next());
