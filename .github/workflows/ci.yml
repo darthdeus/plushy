@@ -11,44 +11,82 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  test:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        # os: [windows-latest, ubuntu-latest, macos-latest]
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+        rust:
+          - stable
+          - nightly
+        features:
+          - --all-features
+          - --no-default-features
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Remove cargo config for incremental builds
-        run: rm -f .cargo/config.toml
-
-      - uses: actions/cache@v3
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-build-nightly-${{ hashFiles('**/Cargo.toml') }}
+          toolchain: ${{ matrix.rust }}
+
+      - run: cargo build -p plushy --all-targets ${{ matrix.features }}
+
+      - run: cargo test -p plushy ${{ matrix.features }}
+
+  # no-std-build-test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         targets: x86_64-unknown-none
+  #
+  #     # Build the `test-no-std-macros` target with x86_64-unknown-none target
+  #     - run: cargo build -p test-no-std-macros --target x86_64-unknown-none
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - run: cargo clippy --all-features -- -D warnings
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: doc
+        run: cargo doc --no-deps --all-features
+        env:
+          RUSTDOCFLAGS: -Dwarnings
+
+  miri:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@nightly
         with:
-          components: clippy, rustfmt
+          components: miri, rust-src
 
-      - name: Cache rust modules
-        uses: Swatinem/rust-cache@v2.0.1
-        with:
-          cache-on-failure: true
-          shared-key: ubuntu-build
-
-      - name: Build & run tests
-        run: cargo test
-
-      - name: Clippy
-        run: cargo clippy
-
-      - name: Rustfmt check
-        run: cargo fmt --check
+      - run: cargo miri setup
+      - run: cargo miri test --all-features
