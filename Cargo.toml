@@ -9,7 +9,7 @@ homepage = "https://docs.rs/plushy"
 repository = "https://github.com/darthdeus/comfy"
 
 [features]
-defualt = ["globals"]
+default = ["globals"]
 globals = ["dep:atomic_refcell", "dep:once_cell", "dep:parking_lot"]
 
 [dependencies]
